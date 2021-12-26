@@ -1,5 +1,4 @@
-const {createStore, applyMiddleware} = require('redux');
-
+const {createStore, applyMiddleware, compose} = require('redux');
 
 //리듀서는 한 파일에 모아서 한 번에 임포트 함
 const reducer = require('./reducers/index');
@@ -7,12 +6,12 @@ const reducer = require('./reducers/index');
 // 액션은 잘 import 하고 있어 
 const { addPost} = require('./actions/post');
 const {logIn, logOut} = require('./actions/user');
-
+const {composeWithDevTools} = require('redux-devtools-extension');
 
 // 초기값
 const initialState = {
   user: {
-    isLogginIn: true,
+    isLoggingIn: false,
     data: null,
   },
   posts: [],
@@ -25,14 +24,6 @@ const firstMiddleware = (store)=> (dispatch)=> (action) =>{
   // 기능 추가 
  // console.log('액션 끝:', action)
 };
-
-// function firstMiddleware(store) {
-//   return function(next){
-//     return function(action){
-
-//     }
-//   }
-// }
 const thunkMiddleware = (store) =>(dispatch) =>(action) =>{
   if (typeof action === 'function'){ // 비동기
     console.log('성크 미들웨어 ');
@@ -40,37 +31,21 @@ const thunkMiddleware = (store) =>(dispatch) =>(action) =>{
   }
   return dispatch(action);
 }
-const enhancer = applyMiddleware(
-  firstMiddleware,
-  thunkMiddleware
-  );
+const enhancer = process.env.NODE_ENV === 'production' ?
+compose( // 배포 환경
+  applyMiddleware(
+    firstMiddleware,
+    thunkMiddleware
+  )
+)
+: composeWithDevTools( // 개발 환경
+  applyMiddleware(
+    firstMiddleware,
+    thunkMiddleware
+  )
+);
 
 // store
 const store = createStore(reducer, initialState, enhancer);
-store.subscribe( ()=>{ // react-redux 안에 들어있음
-  console.log('changed'); // 화면 바꿔주는 코드 여기서
-});
 
-console.log('1st', store.getState());
-
-//----------------------
-
-
-store.dispatch(logIn({
-  id:1,
-  name: 'pac',
-  admin: true,
-}));
-console.log('2nd', store.getState());
-
-// store.dispatch(addPost({
-//   userId:1,
-//   id: 1,
-//   content: 'hellow ',
-// }));
-// console.log('3th', store.getState());
-
-// store.dispatch(logOut());
-// console.log('4th', store.getState());
-
-
+module.exports = store;
